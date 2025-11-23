@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -28,6 +29,10 @@ public class EnergyController {
 
     @GetMapping(path = "optimalChargingWindow")
     public ResponseEntity<OptimalChargingWindowDto>  optimalChargingWindow(@RequestParam int hours) {
+
+        if(hours < 1 || hours > 6) {
+            throw new IllegalArgumentException("Hours must be between 1 and 6");
+        }
 
         OptimalChargingWindowDto report = energyService.getOptimalChargingWindow(hours);
         return new ResponseEntity<>(report, HttpStatus.OK);

@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 
 
 @Component
-public class CarbonIntensityClient {
+public class CarbonIntensityClient{
     private final RestTemplate restTemplate;
 
     @Value("${carbon.api.url}")

@@ -2,11 +2,12 @@ package com.codibly.energymix.services.impl;
 
 import com.codibly.energymix.client.CarbonIntensityClient;
 import com.codibly.energymix.domain.dto.*;
+import com.codibly.energymix.exception.NotEnoughDataException;
 import com.codibly.energymix.services.EnergyService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -17,12 +18,13 @@ import java.util.stream.Collectors;
 public class EnergyServiceImpl implements EnergyService {
 
     private final CarbonIntensityClient carbonIntensityClient;
+    private final Set<String> cleanSources;
 
-    public EnergyServiceImpl(CarbonIntensityClient carbonIntensityClient) {
+    public EnergyServiceImpl(CarbonIntensityClient carbonIntensityClient,
+                             @Value("${energy.clean-sources:biomass,nuclear,hydro,wind,solar}") Set<String> cleanSources) {
         this.carbonIntensityClient = carbonIntensityClient;
+        this.cleanSources = cleanSources;
     }
-
-    private static final Set<String> CLEAN_ENERGY = Set.of("biomass", "nuclear", "hydro", "wind", "solar");
 
     @Override
     public List<DailyEnergyMixDto> getEnergyMixForThreeDays() {
@@ -78,7 +80,7 @@ public class EnergyServiceImpl implements EnergyService {
             averagePercent = Math.round(averagePercent * 10.0) / 10.0;
             averages.put(fuel, averagePercent);
 
-            if (CLEAN_ENERGY.contains(fuel)) {
+            if (cleanSources.contains(fuel)) {
                 cleanEnergyPercent += averagePercent;
             }
         }
@@ -95,7 +97,7 @@ public class EnergyServiceImpl implements EnergyService {
         double cleanEnergyPercent = 0;
         if (interval.getGenerationMix() != null) {
             for (GenerationMixDto mix : interval.getGenerationMix()) {
-                if (CLEAN_ENERGY.contains(mix.getFuel())) {
+                if (cleanSources.contains(mix.getFuel())) {
                     cleanEnergyPercent += mix.getPercentage();
                 }
             }
@@ -116,14 +118,14 @@ public class EnergyServiceImpl implements EnergyService {
         EnergyResponseDto response = carbonIntensityClient.GetGenerationData(from, to);
 
         if (response == null || response.getData() == null || response.getData().isEmpty()) {
-            return null;
+            throw new NotEnoughDataException("Couldnt get generation data");
         }
 
         List<GenerationItemDto> data = response.getData();
         int windowSize = (hours * 60) / INTERVAL_MINUTES;
 
         if (data.size() < windowSize) {
-            return null;
+            throw new NotEnoughDataException("Not enough generation data to calculate charging window");
         }
 
         double[] prefixSumsCleanEnergyPercent = new double[data.size() + 1];
@@ -146,7 +148,7 @@ public class EnergyServiceImpl implements EnergyService {
         }
 
         if (bestStartIndex == -1) {
-            return null;
+            throw new NotEnoughDataException("Coulndt find valid charging window");
         }
 
         double averageCleanEnergyPercent = maxCleanEnergyPercentSum / windowSize;
