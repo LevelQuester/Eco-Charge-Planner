@@ -1,16 +1,8 @@
 package com.codibly.energymix.domain.dto;
 
-import ch.qos.logback.core.joran.sanity.Pair;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.List;
 import java.util.Map;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+
 public class DailyEnergyMixDto {
 
     private String date;
@@ -18,4 +10,37 @@ public class DailyEnergyMixDto {
     private Double cleanEnergyPercent;
 
     private Map<String, Double> fuelMix;
+
+    public DailyEnergyMixDto(String date, Double cleanEnergyPercent, Map<String, Double> fuelMix) {
+        this.date = date;
+        this.cleanEnergyPercent = cleanEnergyPercent;
+        this.fuelMix = fuelMix;
+    }
+
+    public DailyEnergyMixDto() {
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public Double getCleanEnergyPercent() {
+        return cleanEnergyPercent;
+    }
+
+    public Map<String, Double> getFuelMix() {
+        return fuelMix;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public void setCleanEnergyPercent(Double cleanEnergyPercent) {
+        this.cleanEnergyPercent = cleanEnergyPercent;
+    }
+
+    public void setFuelMix(Map<String, Double> fuelMix) {
+        this.fuelMix = fuelMix;
+    }
 }
