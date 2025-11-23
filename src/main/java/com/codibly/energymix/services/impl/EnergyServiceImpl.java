@@ -1,14 +1,12 @@
 package com.codibly.energymix.services.impl;
 
 import com.codibly.energymix.client.CarbonIntensityClient;
-import com.codibly.energymix.domain.dto.DailyEnergyMixDto;
-import com.codibly.energymix.domain.dto.EnergyResponseDto;
-import com.codibly.energymix.domain.dto.GenerationItemDto;
-import com.codibly.energymix.domain.dto.GenerationMixDto;
+import com.codibly.energymix.domain.dto.*;
 import com.codibly.energymix.services.EnergyService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -47,8 +45,7 @@ public class EnergyServiceImpl implements EnergyService {
 
         ArrayList<DailyEnergyMixDto> EnergyMixForThreeDays = new ArrayList<>();
 
-        for(int i=0; i<3;i++)
-        {
+        for (int i = 0; i < 3; i++) {
             String date = today.plusDays(i).toString();
             EnergyMixForThreeDays.add(CalculateDailyEnergyMixAverage(date, groupedByDay.get(date)));
         }
@@ -60,8 +57,7 @@ public class EnergyServiceImpl implements EnergyService {
         Map<String, Double> sums = new HashMap<>();
 
         for (GenerationItemDto interval : intervals) {
-            for(GenerationMixDto mix : interval.getGenerationMix())
-            {
+            for (GenerationMixDto mix : interval.getGenerationMix()) {
                 if (!sums.containsKey(mix.getFuel())) {
                     sums.put(mix.getFuel(), mix.getPercentage());
                 } else {
@@ -82,7 +78,7 @@ public class EnergyServiceImpl implements EnergyService {
             averagePercent = Math.round(averagePercent * 10.0) / 10.0;
             averages.put(fuel, averagePercent);
 
-            if(CLEAN_ENERGY.contains(fuel)) {
+            if (CLEAN_ENERGY.contains(fuel)) {
                 cleanEnergyPercent += averagePercent;
             }
         }
@@ -90,5 +86,75 @@ public class EnergyServiceImpl implements EnergyService {
         cleanEnergyPercent = Math.round(cleanEnergyPercent * 10.0) / 10.0;
 
         return new DailyEnergyMixDto(date, cleanEnergyPercent, averages);
+    }
+
+    private static final int INTERVAL_MINUTES = 30;
+    private static final int DAYS_TO_FETCH = 2;
+
+    private double calculateCleanEnergyPercentPerInterval(GenerationItemDto interval) {
+        double cleanEnergyPercent = 0;
+        if (interval.getGenerationMix() != null) {
+            for (GenerationMixDto mix : interval.getGenerationMix()) {
+                if (CLEAN_ENERGY.contains(mix.getFuel())) {
+                    cleanEnergyPercent += mix.getPercentage();
+                }
+            }
+        }
+        return cleanEnergyPercent;
+    }
+
+    @Override
+    public OptimalChargingWindowDto getOptimalChargingWindow(int hours) {
+        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+
+        String from = now.withMinute((now.getMinute() / INTERVAL_MINUTES) * INTERVAL_MINUTES)
+                .withSecond(0).withNano(0)
+                .format(DateTimeFormatter.ISO_INSTANT);
+
+        String to = ZonedDateTime.parse(from).plusDays(DAYS_TO_FETCH).format(DateTimeFormatter.ISO_INSTANT);
+
+        EnergyResponseDto response = carbonIntensityClient.GetGenerationData(from, to);
+
+        if (response == null || response.getData() == null || response.getData().isEmpty()) {
+            return null;
+        }
+
+        List<GenerationItemDto> data = response.getData();
+        int windowSize = (hours * 60) / INTERVAL_MINUTES;
+
+        if (data.size() < windowSize) {
+            return null;
+        }
+
+        double[] prefixSumsCleanEnergyPercent = new double[data.size() + 1];
+        prefixSumsCleanEnergyPercent[0] = 0;
+
+        for (int i = 0; i < data.size(); i++) {
+            double currentCleanEnergyPercent = calculateCleanEnergyPercentPerInterval(data.get(i));
+            prefixSumsCleanEnergyPercent[i + 1] = prefixSumsCleanEnergyPercent[i] + currentCleanEnergyPercent;
+        }
+
+        double maxCleanEnergyPercentSum = -1;
+        int bestStartIndex = -1;
+
+        for (int i = windowSize; i < prefixSumsCleanEnergyPercent.length; i++) {
+            double currentWindowSum = prefixSumsCleanEnergyPercent[i] - prefixSumsCleanEnergyPercent[i - windowSize];
+            if (currentWindowSum > maxCleanEnergyPercentSum) {
+                maxCleanEnergyPercentSum = currentWindowSum;
+                bestStartIndex = i - windowSize;
+            }
+        }
+
+        if (bestStartIndex == -1) {
+            return null;
+        }
+
+        double averageCleanEnergyPercent = maxCleanEnergyPercentSum / windowSize;
+        averageCleanEnergyPercent = Math.round(averageCleanEnergyPercent * 10.0) / 10.0;
+
+        String startTime = data.get(bestStartIndex).getFrom();
+        String endTime = data.get(bestStartIndex + windowSize - 1).getTo();
+
+        return new OptimalChargingWindowDto(startTime, endTime, averageCleanEnergyPercent);
     }
 }
