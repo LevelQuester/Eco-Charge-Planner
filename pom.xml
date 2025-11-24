@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.codibly</groupId>
-	<artifactId>codibly-energy-task</artifactId>
+	<artifactId>eco-charge-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>starter</name>
 	<description>Demo for Spring Boot Starters</description>

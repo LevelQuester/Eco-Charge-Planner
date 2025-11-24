@@ -5,6 +5,7 @@ import com.codibly.energymix.domain.dto.OptimalChargingWindowDto;
 import com.codibly.energymix.services.EnergyService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
+@CrossOrigin(origins = "*")
 public class EnergyController {
 
     private final EnergyService energyService;
@@ -22,15 +24,15 @@ public class EnergyController {
     }
 
     @GetMapping(path = "energyMixAverage")
-    public ResponseEntity<List< DailyEnergyMixDto >> energyMix() {
+    public ResponseEntity<List<DailyEnergyMixDto>> energyMix() {
         List<DailyEnergyMixDto> report = energyService.getEnergyMixForThreeDays();
         return new ResponseEntity<>(report, HttpStatus.OK);
     }
 
     @GetMapping(path = "optimalChargingWindow")
-    public ResponseEntity<OptimalChargingWindowDto>  optimalChargingWindow(@RequestParam int hours) {
+    public ResponseEntity<OptimalChargingWindowDto> optimalChargingWindow(@RequestParam int hours) {
 
-        if(hours < 1 || hours > 6) {
+        if (hours < 1 || hours > 6) {
             throw new IllegalArgumentException("Hours must be between 1 and 6");
         }
 
