@@ -1,0 +1,29 @@
+# --- OS Junk Files ---
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+
+# --- IDE & Editors (JetBrains, VS Code) ---
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# --- Safety Net (Ignore build folders in root) ---
+# These should be inside api/ or web/, but if they appear in root, ignore them.
+node_modules/
+target/
+dist/
+build/
+out/
+
+# --- Logs & Secrets ---
+*.log
+.env
+.env.local
+
+# --- Documentation ---
+# Optional: Ignore the PDF if you don't want it in the repo
+*.pdf
