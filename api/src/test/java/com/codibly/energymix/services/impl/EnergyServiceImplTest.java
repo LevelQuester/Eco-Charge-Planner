@@ -158,4 +158,87 @@ class EnergyServiceImplTest {
 
                 assertThrows(NotEnoughDataException.class, () -> energyService.getOptimalChargingWindow(1));
         }
+
+        @Test
+        void getEnergyMixForThreeDays_ShouldHandleMissingDays() {
+                LocalDate today = LocalDate.now(ZoneOffset.UTC);
+                String todayStr = today.toString();
+
+                GenerationItemDto item1 = TestDataBuilder.generationItem()
+                                .from(todayStr + "T10:00:00Z")
+                                .withMix("solar", 50.0)
+                                .build();
+
+                List<GenerationItemDto> data = List.of(item1);
+                EnergyResponseDto response = new EnergyResponseDto();
+                response.setData(data);
+
+                given(carbonIntensityClient.GetGenerationData(anyString(), anyString())).willReturn(response);
+
+                List<DailyEnergyMixDto> result = energyService.getEnergyMixForThreeDays();
+
+                assertEquals(3, result.size());
+
+                DailyEnergyMixDto day1 = result.stream().filter(d -> d.getDate().equals(todayStr)).findFirst()
+                                .orElseThrow();
+                assertEquals(50.0, day1.getCleanEnergyPercent(), 0.001);
+
+                String tomorrowStr = today.plusDays(1).toString();
+                DailyEnergyMixDto day2 = result.stream().filter(d -> d.getDate().equals(tomorrowStr)).findFirst()
+                                .orElseThrow();
+                assertEquals(0.0, day2.getCleanEnergyPercent(), 0.001);
+                assertTrue(day2.getFuelMix().isEmpty());
+        }
+
+        @Test
+        void getOptimalChargingWindow_ShouldHandleExactWindowSize() {
+                int hours = 1;
+                ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).withMinute(0).withSecond(0).withNano(0);
+                String t0 = now.format(DateTimeFormatter.ISO_INSTANT);
+                String t1 = now.plusMinutes(30).format(DateTimeFormatter.ISO_INSTANT);
+                String t2 = now.plusMinutes(60).format(DateTimeFormatter.ISO_INSTANT);
+
+                GenerationItemDto i0 = TestDataBuilder.generationItem().from(t0).to(t1).withMix("solar", 50.0).build();
+                GenerationItemDto i1 = TestDataBuilder.generationItem().from(t1).to(t2).withMix("solar", 60.0).build();
+
+                List<GenerationItemDto> data = List.of(i0, i1);
+                EnergyResponseDto response = new EnergyResponseDto();
+                response.setData(data);
+
+                given(carbonIntensityClient.GetGenerationData(anyString(), anyString())).willReturn(response);
+
+                OptimalChargingWindowDto result = energyService.getOptimalChargingWindow(hours);
+
+                assertEquals(t0, result.getStartTime());
+                assertEquals(t2, result.getEndTime());
+                assertEquals(55.0, result.getCleanEnergyPercentage(), 0.001);
+        }
+
+        @Test
+        void getOptimalChargingWindow_ShouldHandleNullGenerationMix() {
+                int hours = 1;
+                ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).withMinute(0).withSecond(0).withNano(0);
+                String t0 = now.format(DateTimeFormatter.ISO_INSTANT);
+                String t1 = now.plusMinutes(30).format(DateTimeFormatter.ISO_INSTANT);
+                String t2 = now.plusMinutes(60).format(DateTimeFormatter.ISO_INSTANT);
+
+                GenerationItemDto i0 = new GenerationItemDto();
+                i0.setFrom(t0);
+                i0.setTo(t1);
+                i0.setGenerationMix(null);
+
+                GenerationItemDto i1 = TestDataBuilder.generationItem().from(t1).to(t2).withMix("solar", 100.0).build();
+
+                List<GenerationItemDto> data = List.of(i0, i1);
+                EnergyResponseDto response = new EnergyResponseDto();
+                response.setData(data);
+
+                given(carbonIntensityClient.GetGenerationData(anyString(), anyString())).willReturn(response);
+
+                OptimalChargingWindowDto result = energyService.getOptimalChargingWindow(hours);
+
+                assertEquals(t0, result.getStartTime());
+                assertEquals(t2, result.getEndTime());
+                assertEquals(50.0, result.getCleanEnergyPercentage(), 0.001);
+        }
 }

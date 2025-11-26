@@ -49,7 +49,12 @@ public class EnergyServiceImpl implements EnergyService {
 
         for (int i = 0; i < 3; i++) {
             String date = today.plusDays(i).toString();
-            EnergyMixForThreeDays.add(CalculateDailyEnergyMixAverage(date, groupedByDay.get(date)));
+            List<GenerationItemDto> intervals = groupedByDay.get(date);
+            if (intervals != null) {
+                EnergyMixForThreeDays.add(CalculateDailyEnergyMixAverage(date, intervals));
+            } else {
+                EnergyMixForThreeDays.add(new DailyEnergyMixDto(date, 0.0, Collections.emptyMap()));
+            }
         }
 
         return EnergyMixForThreeDays;
