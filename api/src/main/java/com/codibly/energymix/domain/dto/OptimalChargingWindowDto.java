@@ -3,6 +3,7 @@ package com.codibly.energymix.domain.dto;
 public class OptimalChargingWindowDto {
         private String startTime;
         private String endTime;
+        private Double cleanEnergyPercentage;
 
     public String getStartTime() {
         return startTime;
@@ -36,6 +37,4 @@ public class OptimalChargingWindowDto {
         this.endTime = endTime;
         this.cleanEnergyPercentage = cleanEnergyPercentage;
     }
-
-    private Double cleanEnergyPercentage;
 }
