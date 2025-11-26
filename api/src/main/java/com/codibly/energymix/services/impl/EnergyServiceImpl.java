@@ -21,7 +21,7 @@ public class EnergyServiceImpl implements EnergyService {
     private final Set<String> cleanSources;
 
     public EnergyServiceImpl(CarbonIntensityClient carbonIntensityClient,
-                             @Value("${energy.clean-sources:biomass,nuclear,hydro,wind,solar}") Set<String> cleanSources) {
+            @Value("${energy.clean-sources:biomass,nuclear,hydro,wind,solar}") Set<String> cleanSources) {
         this.carbonIntensityClient = carbonIntensityClient;
         this.cleanSources = cleanSources;
     }
