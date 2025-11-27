@@ -15,10 +15,16 @@ const FUEL_COLORS: Record<string, string> = {
 
 const getColor = (fuel: string) => FUEL_COLORS[fuel.toLowerCase()] || '#9E9E9E';
 
+const formatUtcDate = (iso: string) => {
+    return new Date(iso).toLocaleDateString([], {
+        timeZone: 'UTC'
+    });
+};
+
 export default function EnergyMixChart({ data }: { data: DailyEnergyMixDto }) {
     return (
         <div className="card chart-container">
-            <h3>{data.date}</h3>
+            <h3>{formatUtcDate(data.date)}</h3>
             <div style={{ color: 'var(--success-color)', fontWeight: 'bold', marginBottom: '16px' }}>
                 Clean Energy: {data.cleanEnergyPercent.toFixed(1)}%
             </div>
@@ -35,6 +41,7 @@ export default function EnergyMixChart({ data }: { data: DailyEnergyMixDto }) {
                     }]}
                     slotProps={{ legend: { position: { vertical: 'bottom', horizontal: 'center' } } }}
                     margin={{ top: 10, bottom: 50, left: 10, right: 10 }}
+                    height={250}
                 />
             </div>
         </div>

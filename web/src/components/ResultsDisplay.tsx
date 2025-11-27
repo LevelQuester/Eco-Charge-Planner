@@ -34,7 +34,7 @@ export default function ResultsDisplay({ result }: { result: OptimalChargingWind
                 <div className="result-item">
                     <span className="result-label">Time Window (UTC)</span>
                     <div className="result-value">
-                        {formatUtcTime(result.startTime)} - {formatUtcTime(result.endTime)} UTC0
+                        {formatUtcTime(result.startTime)} - {formatUtcTime(result.endTime)}
                     </div>
                 </div>
 

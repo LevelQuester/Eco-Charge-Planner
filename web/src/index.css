@@ -26,7 +26,6 @@ html {
   font-family: 'Roboto', sans-serif;
   background-color: var(--background-color);
   color: var(--text-primary);
-  overflow: hidden;
 }
 
 #root {
@@ -80,6 +79,7 @@ html {
   margin-bottom: 20px;
   flex: 0.8;
   min-height: 0;
+  flex-wrap: wrap;
 }
 
 .chart-wrapper {
@@ -93,6 +93,7 @@ html {
   justify-content: center;
   gap: 20px;
   flex: 0 0 auto;
+  flex-wrap: wrap;
 }
 
 .bottom-col {

@@ -55,7 +55,7 @@ function App() {
                     ) : (
                         <div className="card" style={{ alignItems: 'center', opacity: 0.7 }}>
                             <p style={{ fontSize: '1rem', margin: 0 }}>
-                                Enter duration to see optimal window
+                                You will find results here...
                             </p>
                         </div>
                     )}
